@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiCamp Interactive Vocabulary Hub</title>
+    <!-- Tailwind CSS for modern adaptive layouts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Sans and Inter Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .serif-font {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom scrollbar styling for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 3D Flashcard Flip Effect */
+        .flashcard-perspective {
+            perspective: 1200px;
+        }
+        .flashcard-inner {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flashcard-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-front, .flashcard-back {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="min-height-screen flex flex-col text-slate-800 bg-slate-50/50">
+
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-teal-400 text-indigo-900 p-2.5 rounded-xl shadow-inner">
+                    <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight">LexiCamp</h1>
+                    <p class="text-xs text-teal-300 font-medium">Interactive Vocabulary Explorer</p>
+                </div>
+            </div>
+            <!-- Global master progress indicator -->
+            <div class="flex items-center gap-4 bg-indigo-950/60 px-4 py-2 rounded-full border border-indigo-800/50">
+                <div class="text-right">
+                    <span class="text-xs text-slate-300 block leading-none">Mastered Progress</span>
+                    <span id="mastered-count-badge" class="text-sm font-bold text-teal-400">0/58 Words</span>
+                </div>
+                <div class="w-24 bg-indigo-900 h-2.5 rounded-full overflow-hidden">
+                    <div id="mastered-progress-bar" class="bg-teal-400 h-full w-0 transition-all duration-500"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Switcher -->
+        <div class="bg-indigo-950/80 border-t border-indigo-800/30">
+            <div class="max-w-7xl mx-auto px-4 flex justify-around sm:justify-start gap-1 sm:gap-4 overflow-x-auto">
+                <button onclick="switchTab('reader')" id="tab-btn-reader" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-teal-400 text-teal-400 transition-all whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Interactive Reader
+                </button>
+                <button onclick="switchTab('flashcards')" id="tab-btn-flashcards" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-300 hover:text-white transition-all whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-clone"></i> 3D Flashcards
+                </button>
+                <button onclick="switchTab('dictionary')" id="tab-btn-dictionary" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-300 hover:text-white transition-all whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-spell-check"></i> Lexicon List
+                </button>
+                <button onclick="switchTab('quiz')" id="tab-btn-quiz" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-300 hover:text-white transition-all whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question"></i> Cloze Quiz
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+        
+        <!-- ==================== TAB: INTERACTIVE READER ==================== -->
+        <section id="tab-content-reader" class="tab-pane block">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Interactive Text Passage -->
+                <div class="lg:col-span-8 bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            <span class="text-teal-600"><i class="fa-solid fa-book"></i></span>
+                            Last Summer at LexiCamp
+                        </h2>
+                        <span class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-semibold">
+                            <i class="fa-solid fa-circle-info mr-1"></i> Click highlighted words for English definitions
+                        </span>
+                    </div>
+                    
+                    <!-- Text Segment containing words wrapped dynamically -->
+                    <article id="passage-container" class="serif-font text-lg leading-relaxed text-slate-700 space-y-6">
+                        <p>
+                            Last summer, I decided to <span class="vocab-word" data-word="enroll in">enroll in</span> a gardening and <span class="vocab-word" data-word="craft">craft</span> camp. It was an <span class="vocab-word" data-word="ancient">ancient</span> tradition at our school, and I was <span class="vocab-word" data-word="curious">curious</span> about it. My <span class="vocab-word" data-word="goal">goal</span> was to learn something new and make <span class="vocab-word" data-word="progress">progress</span>, not just in skills but also in <span class="vocab-word" data-word="bravery">bravery</span>. On the first day, our teacher asked us to <span class="vocab-word" data-word="discuss">discuss</span> our <span class="vocab-word" data-word="feelings">feelings</span> about the camp. I felt <span class="vocab-word" data-word="excitedly">excitedly</span> nervous.
+                        </p>
+                        <p>
+                            Our first <span class="vocab-word" data-word="challenge">challenge</span> was to <span class="vocab-word" data-word="grow">grow</span> vegetables. We planted <span class="vocab-word" data-word="cabbage">cabbage</span> seeds and used a special <span class="vocab-word" data-word="machine">machine</span> to <span class="vocab-word" data-word="mix">mix</span> the soil. We had to <span class="vocab-word" data-word="separate">separate</span> the seeds into different <span class="vocab-word" data-word="sorts">sorts</span> in <span class="vocab-word" data-word="square">square</span> boxes. We also learned to <span class="vocab-word" data-word="store">store</span> water in a tank under the <span class="vocab-word" data-word="roof">roof</span>. <span class="vocab-word" data-word="everywhere">Everywhere</span> we looked, there were pots and tools. One day, we used a 3D <span class="vocab-word" data-word="print">print</span>er to print small <span class="vocab-word" data-word="models">models</span> of plants. It was <span class="vocab-word" data-word="impossible">impossible</span> to do it perfectly at first, but we didn’t <span class="vocab-word" data-word="fail">fail</span>. We kept trying.
+                        </p>
+                        <p>
+                            We also made <span class="vocab-word" data-word="pizza">pizza</span> in an outdoor oven. We added different <span class="vocab-word" data-word="flavours">flavours</span> like herbs and cheese. The dough became <span class="vocab-word" data-word="sticky">sticky</span>, and I accidentally got some on my <span class="vocab-word" data-word="cloth">cloth</span> apron. We used <span class="vocab-word" data-word="cotton">cotton</span> gloves to <span class="vocab-word" data-word="handle">handle</span> the hot pan. Once, my friend <span class="vocab-word" data-word="burned">burned</span> his finger on the oven. <span class="vocab-word" data-word="luckily">Luckily</span>, it was a minor <span class="vocab-word" data-word="burn">burn</span>, and we had a first-aid kit. He stuck a <span class="vocab-word" data-word="sticker">sticker</span> on his bandage to feel better.
+                        </p>
+                        <p>
+                            For <span class="vocab-word" data-word="windsurf">windsurf</span> practice, we went to a nearby lake. I had to <span class="vocab-word" data-word="skate">skate</span> on the board and <span class="vocab-word" data-word="stick">stick</span> to the handle tightly. The <span class="vocab-word" data-word="handle">handle</span> of the sail was heavy. I <span class="vocab-word" data-word="improved">improved</span> my balance day by day. We also had to <span class="vocab-word" data-word="test">test</span> our equipment <span class="vocab-word" data-word="everywhere">everywhere</span> on the water. It was a great <span class="vocab-word" data-word="experience">experience</span>. We faced many <span class="vocab-word" data-word="difficulties">difficulties</span>, but we learned to <span class="vocab-word" data-word="solve">solve</span> them. Our teacher always <span class="vocab-word" data-word="reminded">reminded</span> us to stay positive. <span class="vocab-word" data-word="hopefully">Hopefully</span>, we would all <span class="vocab-word" data-word="succeed">succeed</span>.
+                        </p>
+                        <p>
+                            At the end, we presented our projects. I felt <span class="vocab-word" data-word="proud">proud</span>—maybe even the <span class="vocab-word" data-word="proudest">proudest</span>—when I showed my vegetable garden. My classmate, a fifth <span class="vocab-word" data-word="grader">grader</span>, made a beautiful <span class="vocab-word" data-word="magazine">magazine</span> about our camp life. Another friend created a creative <span class="vocab-word" data-word="solution">solution</span> for watering plants using recycled bottles. We all received a certificate of <span class="vocab-word" data-word="success">success</span>. Our teacher said our teamwork was <span class="vocab-word" data-word="basic">basic</span> to our achievements.
+                        </p>
+                        <p>
+                            This camp taught me that <span class="vocab-word" data-word="bravery">bravery</span> comes from trying new things. <span class="vocab-word" data-word="curiosity">Curiosity</span> led to <span class="vocab-word" data-word="countless">countless</span> discoveries. We used <span class="vocab-word" data-word="traffic">traffic</span> rules to stay safe on the paths. We even learned that this camp <span class="vocab-word" data-word="came into being">came into being</span> thanks to a generous donation. On the last day, I took my <span class="vocab-word" data-word="umbrella">umbrella</span> and walked <span class="vocab-word" data-word="away">away</span> from the camp, carrying countless happy memories and a sticky bag of homemade jam. It was a <span class="vocab-word" data-word="course">course</span> in life, not just in gardening. I will never forget it.
+                        </p>
+                    </article>
+                </div>
+
+                <!-- Right Side: Sidebar Live Word Inspector -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <div class="bg-gradient-to-br from-indigo-50 to-slate-100 rounded-2xl p-6 border border-indigo-100 sticky top-24 shadow-sm">
+                        <div id="inspector-placeholder" class="text-center py-12 flex flex-col items-center justify-center gap-4">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-indigo-500">
+                                <i class="fa-solid fa-hand-pointer text-2xl animate-bounce"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-700">Vocabulary Inspector</h3>
+                                <p class="text-slate-500 text-sm mt-1 max-w-xs">Click any highlighted green word inside the passage to inspect its English definitions and examples!</p>
+                            </div>
+                        </div>
+
+                        <!-- Active Word Inspector Pane -->
+                        <div id="inspector-active" class="hidden flex flex-col">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 id="inspect-word" class="text-2xl font-bold text-indigo-900 tracking-tight">word</h3>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        <span id="inspect-pos" class="bg-teal-100 text-teal-800 text-xs px-2 py-0.5 rounded-md font-bold uppercase">pos</span>
+                                        <button onclick="speakSelectedWord()" class="hover:bg-slate-200/80 p-1.5 rounded-full transition text-indigo-700" title="Listen Pronunciation">
+                                            <i class="fa-solid fa-volume-high"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button onclick="toggleWordMasteryFromInspector()" id="inspect-master-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all shadow-sm">
+                                    <i class="fa-solid fa-check-circle"></i> <span>Mastered</span>
+                                </button>
+                            </div>
+
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <h4 class="text-slate-400 font-bold uppercase tracking-wider text-xs">Definition (English)</h4>
+                                    <p id="inspect-definition" class="text-slate-700 font-medium mt-1 leading-relaxed bg-white p-3 rounded-xl border border-slate-200/50">To be successful in achieving your goals.</p>
+                                </div>
+
+                                <div id="inspect-derivatives-wrapper">
+                                    <h4 class="text-slate-400 font-bold uppercase tracking-wider text-xs">Derivatives & Forms</h4>
+                                    <p id="inspect-derivatives" class="text-indigo-800 font-semibold mt-1">success (n.), successful (adj.)</p>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-slate-400 font-bold uppercase tracking-wider text-xs">Context Sentence from Passage</h4>
+                                    <p id="inspect-sentence" class="text-slate-600 italic mt-1 leading-relaxed border-l-2 border-teal-500 pl-3">"Hopefully, we would all succeed."</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: SMART FLASHCARDS ==================== -->
+        <section id="tab-content-flashcards" class="tab-pane hidden">
+            <div class="max-w-xl mx-auto flex flex-col items-center">
+                
+                <!-- Deck Controls and Progress bar -->
+                <div class="w-full flex items-center justify-between mb-4 px-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-slate-500">Filters:</span>
+                        <select onchange="filterFlashcardDeck(this.value)" class="text-xs bg-white border border-slate-300 rounded-lg py-1 px-2.5 font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="all">Show All Words (58)</option>
+                            <option value="needs_review">Needs Review</option>
+                            <option value="mastered">Mastered Only</option>
+                        </select>
+                    </div>
+                    <span id="deck-progress-indicator" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full">Card 1 / 58</span>
+                </div>
+
+                <!-- 3D Flippable Card Base Container -->
+                <div class="flashcard-perspective w-full h-80 sm:h-96 relative cursor-pointer" onclick="flipFlashcard()">
+                    <div id="flashcard-inner" class="flashcard-inner w-full h-full absolute rounded-2xl shadow-lg border border-slate-200/80 bg-white">
+                        
+                        <!-- Front View of Flashcard -->
+                        <div class="flashcard-front absolute inset-0 p-6 flex flex-col justify-between rounded-2xl bg-gradient-to-br from-white to-slate-50">
+                            <div class="flex items-center justify-between">
+                                <span id="card-pos-front" class="bg-indigo-100 text-indigo-800 text-xs px-2.5 py-1 rounded-full font-bold uppercase">POS</span>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="speakCardFront(event)" class="text-slate-400 hover:text-indigo-600 transition p-2 hover:bg-slate-100 rounded-full" title="Hear Pronunciation">
+                                        <i class="fa-solid fa-volume-high text-lg"></i>
+                                    </button>
+                                    <span id="card-status-badge" class="text-xs font-bold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full">
+                                        <i class="fa-solid fa-star mr-1"></i> Studying
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="text-center my-auto">
+                                <h3 id="card-word-front" class="text-4xl sm:text-5xl font-extrabold text-slate-800 tracking-tight select-none">brave</h3>
+                                <p id="card-forms-front" class="text-xs text-indigo-600 font-bold uppercase tracking-widest mt-3">Related Forms: bravery</p>
+                            </div>
+
+                            <div class="text-center border-t border-slate-100 pt-4 flex flex-col items-center">
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Passage Hints</p>
+                                <p id="card-hint-front" class="text-slate-500 text-xs italic select-none">"not just in skills but also in bravery."</p>
+                            </div>
+                        </div>
+
+                        <!-- Back View of Flashcard -->
+                        <div class="flashcard-back absolute inset-0 p-6 flex flex-col justify-between rounded-2xl bg-slate-900 text-white">
+                            <div class="flex items-center justify-between">
+                                <span class="bg-teal-500/20 text-teal-300 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">English Definition</span>
+                                <i class="fa-solid fa-spell-check text-teal-400 text-lg"></i>
+                            </div>
+
+                            <!-- English-to-English Definition, strictly no Chinese -->
+                            <div class="my-auto text-center px-4 space-y-4">
+                                <p id="card-word-back" class="text-2xl font-bold text-teal-300">brave</p>
+                                <p id="card-def-back" class="text-base sm:text-lg text-slate-100 font-medium leading-relaxed">Showing no fear of dangerous situations.</p>
+                                <p id="card-forms-back" class="text-xs text-slate-400 font-semibold italic">Noun form: bravery</p>
+                            </div>
+
+                            <div class="text-center text-slate-400 text-xs border-t border-slate-800 pt-4">
+                                <i class="fa-solid fa-arrows-rotate mr-1"></i> Click to flip back
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Carousel Mechanics and Study Action Bar -->
+                <div class="flex items-center justify-between gap-4 mt-6 w-full px-2">
+                    <button onclick="prevFlashcard()" class="w-12 h-12 bg-white rounded-xl shadow-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center justify-center">
+                        <i class="fa-solid fa-chevron-left text-lg"></i>
+                    </button>
+
+                    <div class="flex items-center gap-3 flex-grow max-w-xs">
+                        <button onclick="markCurrentCardStatus(false)" id="action-btn-again" class="flex-1 py-3 px-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl transition font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrows-rotate"></i> Study Again
+                        </button>
+                        <button onclick="markCurrentCardStatus(true)" id="action-btn-master" class="flex-1 py-3 px-4 bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 rounded-xl transition font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-circle-check"></i> I Know It!
+                        </button>
+                    </div>
+
+                    <button onclick="nextFlashcard()" class="w-12 h-12 bg-white rounded-xl shadow-md border border-slate-200 text-slate-700 hover:bg-slate-50 transition flex items-center justify-center">
+                        <i class="fa-solid fa-chevron-right text-lg"></i>
+                    </button>
+                </div>
+
+                <button onclick="shuffleFlashcardDeck()" class="mt-4 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-shuffle"></i> Shuffle Study Deck
+                </button>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: DICTIONARY LIST ==================== -->
+        <section id="tab-content-dictionary" class="tab-pane hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex flex-col gap-6">
+                <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Visual Lexicon Dictionary</h2>
+                        <p class="text-xs text-slate-500 mt-1">Study all 58 vital vocabulary terms, track mastery, and listen to spoken definitions.</p>
+                    </div>
+                    
+                    <!-- Search Input and Quick Filtering Pill Options -->
+                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div class="relative flex-grow sm:w-64">
+                            <input type="text" id="dict-search-input" oninput="searchVocabularyDictionary()" placeholder="Search word or derivative..." class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 pl-9 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        </div>
+                        <select id="dict-filter-pos" onchange="searchVocabularyDictionary()" class="bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <option value="all">All Parts of Speech</option>
+                            <option value="verb">Verbs</option>
+                            <option value="noun">Nouns</option>
+                            <option value="adjective">Adjectives</option>
+                            <option value="adverb">Adverbs</option>
+                            <option value="phrase">Phrases / Conjunctions</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dictionary Terms Grid Container -->
+                <div id="dictionary-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Cards injected dynamically here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB: CLOZE QUIZ CHALLENGE ==================== -->
+        <section id="tab-content-quiz" class="tab-pane hidden">
+            <div class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Contextual Vocabulary Cloze Quiz</h2>
+                        <p class="text-xs text-slate-500 mt-1">Practice using correct forms and word variants in the exact contextual sentences from your lesson.</p>
+                    </div>
+                    <button onclick="resetQuiz()" class="text-xs font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Quiz
+                    </button>
+                </div>
+
+                <!-- Interactive Quiz Segment -->
+                <div id="quiz-questions-stack" class="space-y-6">
+                    <!-- Dynamic forms inserted via JS -->
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+                    <div class="text-slate-500 text-sm font-semibold">
+                        Overall Score: <span id="quiz-score-indicator" class="text-indigo-600 font-extrabold">0 / 12 Correct</span>
+                    </div>
+                    <button onclick="checkAllQuizAnswers()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition text-sm shadow-md shadow-indigo-600/10">
+                        Submit & Review Answers
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer of the system -->
+    <footer class="bg-slate-900 text-slate-500 py-6 border-t border-slate-800 mt-12 text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; 2026 LexiCamp. All definitions &amp; sentence challenges translated dynamically in context.</p>
+            <div class="flex items-center gap-4 text-slate-400">
+                <span><i class="fa-solid fa-code text-teal-400"></i> Pure Offline-Ready HTML5</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        
+        // 58 Complete Vocabulary Database with definitions, parts of speech, sentences, forms, and tracking state.
+        const vocabDataset = [
+            { id: 1, word: "brave", type: "adjective", pos: "adj.", def: "Ready to face and endure danger, showing courage under threat.", forms: "bravery (n.)", hint: "not just in skills but also in bravery.", sentence: "Our first day, we discussed making progress, not just in skills but also in bravery." },
+            { id: 2, word: "test", type: "verb", pos: "v.", def: "To evaluate or examine the quality, ability, or status of something.", forms: "test (n.)", hint: "to test our equipment everywhere", sentence: "We also had to test our equipment everywhere on the water." },
+            { id: 3, word: "feeling", type: "noun", pos: "n.", def: "An emotional state or physical reaction; an emotional consciousness.", forms: "feel (v.)", hint: "discuss our feelings about the camp.", sentence: "Our teacher asked us to discuss our feelings about the camp." },
+            { id: 4, word: "traffic", type: "noun", pos: "n.", def: "The movement of people, vehicles, or messages along a path or route.", forms: "traffic (n.)", hint: "We used traffic rules to stay safe", sentence: "We used traffic rules to stay safe on the paths." },
+            { id: 5, word: "machine", type: "noun", pos: "n.", def: "An apparatus using mechanical power to perform tasks.", forms: "machinery (n.)", hint: "used a special machine to mix", sentence: "We planted cabbage seeds and used a special machine to mix the soil." },
+            { id: 6, word: "magazine", type: "noun", pos: "n.", def: "A periodical publication containing articles and illustrations.", forms: "magazine (n.)", hint: "made a beautiful magazine about", sentence: "My classmate, a fifth grader, made a beautiful magazine about our camp life." },
+            { id: 7, word: "challenge", type: "noun", pos: "n.", def: "A demanding task or situation that tests someone's abilities.", forms: "challenge (v.)", hint: "Our first challenge was to grow", sentence: "Our first challenge was to grow vegetables." },
+            { id: 8, word: "curious", type: "adjective", pos: "adj.", def: "Eager to know, investigate, or learn something.", forms: "curiosity (n.)", hint: "I was curious about it.", sentence: "It was an ancient tradition, and I was curious about it." },
+            { id: 9, word: "craft", type: "noun", pos: "n.", def: "An occupation or skill involving manual dexterity and artistic handiwork.", forms: "craftsmanship (n.)", hint: "gardening and craft camp.", sentence: "Last summer, I decided to enroll in a gardening and craft camp." },
+            { id: 10, word: "windsurf", type: "verb", pos: "v.", def: "A sport of riding on water on a sailboard with an attached sail.", forms: "windsurfing (n.)", hint: "For windsurf practice, we went", sentence: "For windsurf practice, we went to a nearby lake." },
+            { id: 11, word: "improve", type: "verb", pos: "v.", def: "To advance or raise to a better quality or state.", forms: "improvement (n.)", hint: "I improved my balance day by day.", sentence: "I improved my balance day by day." },
+            { id: 12, word: "model", type: "noun", pos: "n.", def: "A miniature, three-dimensional representation of a physical object.", forms: "model (v.)", hint: "print small models of plants.", sentence: "One day, we used a 3D printer to print small models of plants." },
+            { id: 13, word: "print", type: "verb", pos: "v.", def: "To produce text, graphics, or solid shapes using digital directives.", forms: "printer (n.)", hint: "3D printer to print small models", sentence: "One day, we used a 3D printer to print small models of plants." },
+            { id: 14, word: "gardening", type: "noun", pos: "n.", def: "The process or action of cultivating and keeping a garden.", forms: "garden (n./v.)", hint: "gardening and craft camp.", sentence: "Last summer, I decided to enroll in a gardening and craft camp." },
+            { id: 15, word: "skate", type: "verb", pos: "v.", def: "To slide over ice, ground, or water using blades or a board.", forms: "skateboard (n.)", hint: "I had to skate on the board", sentence: "I had to skate on the board and stick to the handle tightly." },
+            { id: 16, word: "roof", type: "noun", pos: "n.", def: "The external protective covering on the top of a building or structure.", forms: "roofing (n.)", hint: "water in a tank under the roof.", sentence: "We also learned to store water in a tank under the roof." },
+            { id: 17, word: "sort", type: "noun", pos: "n.", def: "A collection of items sharing a specific style, category, or parameter.", forms: "sort (v.)", hint: "separate the seeds into different sorts", sentence: "We had to separate the seeds into different sorts in square boxes." },
+            { id: 18, word: "cabbage", type: "noun", pos: "n.", def: "A round, leafy vegetable packed in green, white, or purple cabbage heads.", forms: "cabbages (pl.)", hint: "We planted cabbage seeds", sentence: "We planted cabbage seeds and used a special machine to mix the soil." },
+            { id: 19, word: "camp", type: "noun", pos: "n./v.", def: "A temporary place of lodging, recreational instruction, or accommodation.", forms: "camping (n.)", hint: "gardening and craft camp.", sentence: "Last summer, I decided to enroll in a gardening and craft camp." },
+            { id: 20, word: "grow", type: "verb", pos: "v.", def: "To cultivate plants; to expand, increase in size, or develop.", forms: "growth (n.)", hint: "challenge was to grow vegetables.", sentence: "Our first challenge was to grow vegetables." },
+            { id: 21, word: "discuss", type: "verb", pos: "v.", def: "To converse about a subject in detail, exchanging perspectives.", forms: "discussion (n.)", hint: "discuss our feelings about the camp.", sentence: "On the first day, our teacher asked us to discuss our feelings." },
+            { id: 22, word: "everywhere", type: "adverb", pos: "adv.", def: "In all places; across all environments without limitation.", forms: "everywhere", hint: "Everywhere we looked, there were pots", sentence: "Everywhere we looked, there were pots and tools." },
+            { id: 23, word: "impossible", type: "adjective", pos: "adj.", def: "Unable to occur, exist, or be executed; absolutely impractical.", forms: "possibility (n.), possible (adj.)", hint: "impossible to do it perfectly", sentence: "It was impossible to do it perfectly at first, but we didn’t fail." },
+            { id: 24, word: "fail", type: "verb", pos: "v.", def: "To be unsuccessful in achieving a parameter or goal.", forms: "failure (n.)", hint: "perfectly at first, but we didn't fail.", sentence: "It was impossible to do it perfectly at first, but we didn’t fail." },
+            { id: 25, word: "pizza", type: "noun", pos: "n.", def: "An Italian oven-baked flatbread topped with tomato, cheese, and meats.", forms: "pizzas (pl.)", hint: "We also made pizza in an outdoor oven.", sentence: "We also made pizza in an outdoor oven." },
+            { id: 26, word: "burn", type: "verb", pos: "v.", def: "To damage or destroy with thermal heat or severe friction.", forms: "burned / burnt (past)", hint: "friend burned his finger on the oven.", sentence: "Once, my friend burned his finger on the oven." },
+            { id: 27, word: "separate", type: "verb", pos: "v.", def: "To set apart or isolate elements from an interconnected structure.", forms: "separately (adv.)", hint: "separate the seeds into different", sentence: "We had to separate the seeds into different sorts in square boxes." },
+            { id: 28, word: "succeed", type: "verb", pos: "v.", def: "To successfully fulfill or execute a specific plan or goal.", forms: "success (n.), successful (adj.)", hint: "Hopefully, we would all succeed.", sentence: "Hopefully, we would all succeed." },
+            { id: 29, word: "stick", type: "verb", pos: "v.", def: "To attach; to hold closely; to remain loyal or consistent to something.", forms: "stuck (past), sticky (adj.), sticker (n.)", hint: "skate on the board and stick to the", sentence: "I had to skate on the board and stick to the handle tightly." },
+            { id: 30, word: "away", type: "adverb", pos: "adv.", def: "To move further into distance, exiting the immediate premise.", forms: "away", hint: "walked away from the camp,", sentence: "I took my umbrella and walked away from the camp." },
+            { id: 31, word: "luckily", type: "adverb", pos: "adv.", def: "By good fortune; in a highly favorable manner.", forms: "lucky (adj.), luck (n.), unluckily (adv.)", hint: "Luckily, it was a minor burn,", sentence: "Luckily, it was a minor burn, and we had a first-aid kit." },
+            { id: 32, word: "excitedly", type: "adverb", pos: "adv.", def: "With strong enthusiastic feelings or intense anticipation.", forms: "excited (adj.), exciting (adj.), excitement (n.)", hint: "I felt excitedly nervous.", sentence: "I felt excitedly nervous about the camp." },
+            { id: 33, word: "hopefully", type: "adverb", pos: "adv.", def: "With hopeful aspiration; in a desired manner.", forms: "hopeful (adj.), hope (v./n.), hopeless (adj.)", hint: "Hopefully, we would all succeed.", sentence: "Hopefully, we would all succeed." },
+            { id: 34, word: "countless", type: "adjective", pos: "adj.", def: "Too many or massive to be numbered; limitless.", forms: "count (v.)", hint: "Curiosity led to countless discoveries.", sentence: "Curiosity led to countless discoveries and happy memories." },
+            { id: 35, word: "solve", type: "verb", pos: "v.", def: "To discover an answer, resolve a problem, or crack an obstacle.", forms: "solution (n.)", hint: "we learned to solve them.", sentence: "We faced many difficulties, but we learned to solve them." },
+            { id: 36, word: "umbrella", type: "noun", pos: "n.", def: "A portable fabric canopy used for protection from rainfall.", forms: "umbrellas (pl.)", hint: "I took my umbrella and walked away", sentence: "On the last day, I took my umbrella and walked away." },
+            { id: 37, word: "handle", type: "noun", pos: "n.", def: "A part of an apparatus or object designed to be held or operated.", forms: "handle (v.)", hint: "stick to the handle tightly.", sentence: "I had to skate on the board and stick to the handle tightly." },
+            { id: 38, word: "proud", type: "adjective", pos: "adj.", def: "Feeling self-respect, satisfied contentment, or status in achievement.", forms: "pride (n.), proudest (superl.)", hint: "I felt proud—maybe even the proudest", sentence: "I felt proud—maybe even the proudest—when I showed my garden." },
+            { id: 39, word: "creative", type: "adjective", pos: "adj.", def: "Displaying great imagination, design capacity, or original ideas.", forms: "creation (n.), create (v.)", hint: "created a creative solution for watering", sentence: "Another friend created a creative solution for watering plants." },
+            { id: 40, word: "solution", type: "noun", pos: "n.", def: "The answer or practical resolution used to solve a problem.", forms: "solve (v.)", hint: "created a creative solution for watering", sentence: "Another friend created a creative solution for watering plants." },
+            { id: 41, word: "grader", type: "noun", pos: "n.", def: "A student in a specific school grade.", forms: "grade (n./v.)", hint: "My classmate, a fifth grader,", sentence: "My classmate, a fifth grader, made a beautiful magazine." },
+            { id: 42, word: "experience", type: "noun", pos: "n.", def: "The process of getting knowledge or skills through practical events.", forms: "experience (v.)", hint: "It was a great experience.", sentence: "It was a great experience." },
+            { id: 43, word: "difficulty", type: "noun", pos: "n.", def: "A tough obstacle, problem, or state that is hard to resolve.", forms: "difficult (adj.)", hint: "We faced many difficulties,", sentence: "We faced many difficulties, but we learned to solve them." },
+            { id: 44, word: "ancient", type: "adjective", pos: "adj.", def: "Having existed for a massive amount of years; belonging to the past.", forms: "anciently (adv.)", hint: "It was an ancient tradition at our school", sentence: "It was an ancient tradition at our school, and I was curious." },
+            { id: 45, word: "store", type: "verb", pos: "v.", def: "To hold, accumulate, or put aside commodities for future usage.", forms: "storage (n.)", hint: "We also learned to store water", sentence: "We also learned to store water in a tank under the roof." },
+            { id: 46, word: "mix", type: "verb", pos: "v.", def: "To blend, compound, or associate materials into a combined solution.", forms: "mixture (n.)", hint: "special machine to mix the soil.", sentence: "We planted cabbage seeds and used a special machine to mix the soil." },
+            { id: 47, word: "course", type: "noun", pos: "n.", def: "A comprehensive sequence of study, instruction, or training.", forms: "courses (pl.)", hint: "It was a course in life, not just", sentence: "It was a course in life, not just in gardening." },
+            { id: 48, word: "flavour", type: "noun", pos: "n.", def: "The characteristic taste profile of a food substance or beverage.", forms: "flavor (US n.)", hint: "added different flavours like herbs", sentence: "We added different flavours like herbs and cheese." },
+            { id: 49, word: "sticky", type: "adjective", pos: "adj.", def: "Exhibiting glue-like properties, adhering tightly to objects.", forms: "stick (v.)", hint: "The dough became sticky,", sentence: "The dough became sticky, and I accidentally got some on my apron." },
+            { id: 50, word: "cloth", type: "noun", pos: "n.", def: "A woven fabric material crafted from cotton, linen, or synthetics.", forms: "clothing (n.)", hint: "some on my cloth apron.", sentence: "I accidentally got some on my cloth apron." },
+            { id: 51, word: "square", type: "adjective", pos: "adj.", def: "A quadrilateral shape of equal side lengths and 90-degree internal angles.", forms: "square (n.)", hint: "different sorts in square boxes.", sentence: "We had to separate the seeds into different sorts in square boxes." },
+            { id: 52, word: "cotton", type: "noun", pos: "n.", def: "A organic plant fiber spun into yarn for soft, protective textiles.", forms: "cotton (adj.)", hint: "used cotton gloves to handle the hot", sentence: "We used cotton gloves to handle the hot pan." },
+            { id: 53, word: "come into being", type: "phrase", pos: "phrase", def: "To begin to exist, originate, or be created.", forms: "came into being (past)", hint: "this camp came into being thanks to", sentence: "We even learned that this camp came into being thanks to a donation." },
+            { id: 54, word: "basic", type: "adjective", pos: "adj.", def: "Forming the foundation, starting parameters, or core essentials.", forms: "basically (adv.)", hint: "our teamwork was basic to our", sentence: "Our teacher said our teamwork was basic to our achievements." },
+            { id: 55, word: "enroll in", type: "verb", pos: "v.", def: "To officially register or place oneself on a list for an activity.", forms: "enrolled in (past)", hint: "decided to enroll in a gardening", sentence: "Last summer, I decided to enroll in a gardening and craft camp." },
+            { id: 56, word: "goal", type: "noun", pos: "n.", def: "An ultimate objective or ambition that a person strives to achieve.", forms: "goals (pl.)", hint: "My goal was to learn something new", sentence: "My goal was to learn something new and make progress." },
+            { id: 57, word: "remind", type: "verb", pos: "v.", def: "To draw attention back to a parameter; to prompt the memory of.", forms: "reminder (n.)", hint: "Our teacher always reminded us", sentence: "Our teacher always reminded us to stay positive." },
+            { id: 58, word: "progress", type: "noun", pos: "n.", def: "Advance, development, or positive movement toward completion.", forms: "progress (v.)", hint: "learn something new and make progress", sentence: "My goal was to learn something new and make progress." }
+        ];
+
+        let appState = {
+            activeTab: 'reader',
+            selectedWordId: null,
+            masteredIds: JSON.parse(localStorage.getItem('lexicamp_mastered_ids') || '[]'),
+            flashcardsDeck: [...vocabDataset],
+            currentFlashcardIndex: 0,
+            flashcardDeckFilter: 'all', // 'all', 'needs_review', 'mastered'
+            isFlashcardFlipped: false
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        function initApp() {
+            // Setup master progress displays
+            updateMasterProgressIndicator();
+
+            // Populate Interactive Word Click Triggers
+            setupPassageInteractiveWords();
+
+            // Setup Dictionary Grid
+            renderDictionary();
+
+            // Setup Cloze Challenge Questions
+            setupQuizQuestions();
+        }
+
+        function switchTab(tabId) {
+            appState.activeTab = tabId;
+
+            // Manage Tab Navigation Classes
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.id === `tab-btn-${tabId}`) {
+                    btn.classList.add('border-teal-400', 'text-teal-400');
+                    btn.classList.remove('border-transparent', 'text-slate-300');
+                } else {
+                    btn.classList.remove('border-teal-400', 'text-teal-400');
+                    btn.classList.add('border-transparent', 'text-slate-300');
+                }
+            });
+
+            // Toggle Tab Pages visibility
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                if (pane.id === `tab-content-${tabId}`) {
+                    pane.classList.remove('hidden');
+                    pane.classList.add('block');
+                } else {
+                    pane.classList.remove('block');
+                    pane.classList.add('hidden');
+                }
+            });
+
+            // Initialize respective tab components if necessary
+            if (tabId === 'flashcards') {
+                prepareFlashcardDeck();
+            }
+        }
+
+        function setupPassageInteractiveWords() {
+            const container = document.getElementById('passage-container');
+            const spans = container.querySelectorAll('.vocab-word');
+
+            spans.forEach(span => {
+                const keyword = span.getAttribute('data-word').toLowerCase();
+                
+                // Add Interactive Tailwind Classes
+                span.className = "vocab-word cursor-pointer bg-teal-50 border-b-2 border-teal-500 text-teal-800 font-semibold hover:bg-teal-100 transition px-1 py-0.5 rounded-sm";
+                
+                // Click Handler to reveal Sidebar Info
+                span.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Match word by root base from list
+                    const foundWordObj = findMatchingWordObject(keyword);
+                    if (foundWordObj) {
+                        inspectWordInPassage(foundWordObj.id);
+                    }
+                });
+            });
+
+            // Highlight words that are already mastered differently
+            updatePassageVisualIndicators();
+        }
+
+        // Helper to find parent word regardless of inflections present in the text (e.g. improved -> improve)
+        function findMatchingWordObject(text) {
+            const trimmed = text.trim().toLowerCase();
+            // Direct Match
+            let match = vocabDataset.find(item => item.word.toLowerCase() === trimmed);
+            if (match) return match;
+
+            // Plural/past tense fuzzy match heuristic
+            if (trimmed.endsWith('s')) {
+                const singular = trimmed.slice(0, -1);
+                match = vocabDataset.find(item => item.word.toLowerCase() === singular);
+                if (match) return match;
+            }
+            if (trimmed.endsWith('ed')) {
+                const root = trimmed.slice(0, -2);
+                match = vocabDataset.find(item => item.word.toLowerCase() === root);
+                if (match) return match;
+                
+                const rootWithE = trimmed.slice(0, -1); // changed improved -> improve
+                match = vocabDataset.find(item => item.word.toLowerCase() === rootWithE);
+                if (match) return match;
+            }
+            if (trimmed.endsWith('ies')) {
+                const root = trimmed.slice(0, -3) + "y"; // difficulties -> difficulty
+                match = vocabDataset.find(item => item.word.toLowerCase() === root);
+                if (match) return match;
+            }
+            return vocabDataset.find(item => trimmed.includes(item.word.toLowerCase()));
+        }
+
+        function inspectWordInPassage(wordId) {
+            const wordObj = vocabDataset.find(w => w.id === wordId);
+            if (!wordObj) return;
+
+            appState.selectedWordId = wordId;
+
+            // Populate inspector contents
+            document.getElementById('inspect-word').textContent = wordObj.word;
+            document.getElementById('inspect-pos').textContent = wordObj.pos;
+            document.getElementById('inspect-definition').textContent = wordObj.def;
+            document.getElementById('inspect-sentence').textContent = `"${wordObj.sentence}"`;
+            
+            const formsWrapper = document.getElementById('inspect-derivatives-wrapper');
+            if (wordObj.forms) {
+                formsWrapper.classList.remove('hidden');
+                document.getElementById('inspect-derivatives').textContent = wordObj.forms;
+            } else {
+                formsWrapper.classList.add('hidden');
+            }
+
+            // Update Mastery toggle button style on Inspector
+            updateInspectorMasteryButton(wordId);
+
+            // Display Pane
+            document.getElementById('inspector-placeholder').classList.add('hidden');
+            document.getElementById('inspector-active').classList.remove('hidden');
+        }
+
+        function updateInspectorMasteryButton(wordId) {
+            const isMastered = appState.masteredIds.includes(wordId);
+            const btn = document.getElementById('inspect-master-btn');
+            
+            if (isMastered) {
+                btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-teal-500 bg-teal-500 text-white transition-all shadow-sm";
+                btn.querySelector('span').textContent = "Mastered";
+            } else {
+                btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-slate-300 text-slate-500 hover:text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-sm";
+                btn.querySelector('span').textContent = "Mark Mastered";
+            }
+        }
+
+        function toggleWordMasteryFromInspector() {
+            if (!appState.selectedWordId) return;
+            toggleWordMastery(appState.selectedWordId);
+            updateInspectorMasteryButton(appState.selectedWordId);
+        }
+
+        function toggleWordMastery(wordId) {
+            const index = appState.masteredIds.indexOf(wordId);
+            if (index > -1) {
+                appState.masteredIds.splice(index, 1);
+            } else {
+                appState.masteredIds.push(wordId);
+            }
+            
+            // Persist locally
+            localStorage.setItem('lexicamp_mastered_ids', JSON.stringify(appState.masteredIds));
+            
+            // Refresh Master indicators across all views
+            updateMasterProgressIndicator();
+            updatePassageVisualIndicators();
+            renderDictionary();
+        }
+
+        function updateMasterProgressIndicator() {
+            const count = appState.masteredIds.length;
+            document.getElementById('mastered-count-badge').textContent = `${count}/58 Words`;
+            
+            const percent = Math.min(100, Math.floor((count / 58) * 100));
+            document.getElementById('mastered-progress-bar').style.width = `${percent}%`;
+        }
+
+        function updatePassageVisualIndicators() {
+            const container = document.getElementById('passage-container');
+            const spans = container.querySelectorAll('.vocab-word');
+
+            spans.forEach(span => {
+                const keyword = span.getAttribute('data-word').toLowerCase();
+                const matchedObj = findMatchingWordObject(keyword);
+                if (matchedObj) {
+                    if (appState.masteredIds.includes(matchedObj.id)) {
+                        // Visual styled success tick indicator for fully mastered items
+                        span.className = "vocab-word cursor-pointer bg-teal-100 border-b-2 border-teal-600 text-teal-900 font-semibold hover:bg-teal-200 transition px-1 py-0.5 rounded-sm";
+                    } else {
+                        span.className = "vocab-word cursor-pointer bg-indigo-50 border-b-2 border-indigo-500 text-indigo-900 font-semibold hover:bg-indigo-100 transition px-1 py-0.5 rounded-sm";
+                    }
+                }
+            });
+        }
+
+        function speakWord(text) {
+            if ('speechSynthesis' in window) {
+                // Cancel active utterances to avoid queued lag
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9; // clear, comfortable instructional pace
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakSelectedWord() {
+            if (!appState.selectedWordId) return;
+            const wordObj = vocabDataset.find(w => w.id === appState.selectedWordId);
+            if (wordObj) {
+                speakWord(wordObj.word);
+            }
+        }
+
+        function speakCardFront(event) {
+            if (event) event.stopPropagation(); // prevent flipping cards on clicking pronunciation
+            const currentCard = appState.flashcardsDeck[appState.currentFlashcardIndex];
+            if (currentCard) {
+                speakWord(currentCard.word);
+            }
+        }
+
+        function prepareFlashcardDeck() {
+            const filter = appState.flashcardDeckFilter;
+            
+            if (filter === 'all') {
+                appState.flashcardsDeck = [...vocabDataset];
+            } else if (filter === 'mastered') {
+                appState.flashcardsDeck = vocabDataset.filter(w => appState.masteredIds.includes(w.id));
+            } else if (filter === 'needs_review') {
+                appState.flashcardsDeck = vocabDataset.filter(w => !appState.masteredIds.includes(w.id));
+            }
+
+            // Fallback for empty filtered deck
+            if (appState.flashcardsDeck.length === 0) {
+                appState.flashcardsDeck = [{
+                    id: 0,
+                    word: "No words found!",
+                    pos: "Hint",
+                    def: "Please adjust your active study deck filter parameters above.",
+                    forms: "",
+                    hint: "Keep exploring vocabulary!",
+                    sentence: "No context available."
+                }];
+            }
+
+            appState.currentFlashcardIndex = 0;
+            appState.isFlashcardFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('is-flipped');
+            
+            renderActiveFlashcard();
+        }
+
+        function filterFlashcardDeck(val) {
+            appState.flashcardDeckFilter = val;
+            prepareFlashcardDeck();
+        }
+
+        function shuffleFlashcardDeck() {
+            // Fisher-Yates Shuffle array
+            for (let i = appState.flashcardsDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [appState.flashcardsDeck[i], appState.flashcardsDeck[j]] = [appState.flashcardsDeck[j], appState.flashcardsDeck[i]];
+            }
+            appState.currentFlashcardIndex = 0;
+            appState.isFlashcardFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('is-flipped');
+            renderActiveFlashcard();
+        }
+
+        function renderActiveFlashcard() {
+            if (appState.flashcardsDeck.length === 0) return;
+            const currentCard = appState.flashcardsDeck[appState.currentFlashcardIndex];
+            
+            // Front Elements Mapping
+            document.getElementById('card-word-front').textContent = currentCard.word;
+            document.getElementById('card-pos-front').textContent = currentCard.pos;
+            document.getElementById('card-hint-front').textContent = `"${currentCard.hint}"`;
+            
+            if (currentCard.forms) {
+                document.getElementById('card-forms-front').classList.remove('invisible');
+                document.getElementById('card-forms-front').textContent = `Forms: ${currentCard.forms}`;
+            } else {
+                document.getElementById('card-forms-front').classList.add('invisible');
+            }
+
+            // Progress Indicators
+            const displayIndex = appState.flashcardsDeck[0].id === 0 ? 0 : appState.currentFlashcardIndex + 1;
+            const displayTotal = appState.flashcardsDeck[0].id === 0 ? 0 : appState.flashcardsDeck.length;
+            document.getElementById('deck-progress-indicator').textContent = `Card ${displayIndex} / ${displayTotal}`;
+
+            // Check if card is mastered globally
+            const isMastered = appState.masteredIds.includes(currentCard.id);
+            const statusBadge = document.getElementById('card-status-badge');
+            
+            if (isMastered) {
+                statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> Mastered`;
+                statusBadge.className = "text-xs font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full border border-teal-100";
+            } else {
+                statusBadge.innerHTML = `<i class="fa-solid fa-star-half-stroke text-amber-500"></i> Reviewing`;
+                statusBadge.className = "text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200/50";
+            }
+
+            // Back Elements Mapping (No Chinese)
+            document.getElementById('card-word-back').textContent = currentCard.word;
+            document.getElementById('card-def-back').textContent = currentCard.def;
+            
+            if (currentCard.forms) {
+                document.getElementById('card-forms-back').textContent = `Derivatives & Related Forms: ${currentCard.forms}`;
+            } else {
+                document.getElementById('card-forms-back').textContent = ``;
+            }
+        }
+
+        function flipFlashcard() {
+            appState.isFlashcardFlipped = !appState.isFlashcardFlipped;
+            const inner = document.getElementById('flashcard-inner');
+            if (appState.isFlashcardFlipped) {
+                inner.classList.add('is-flipped');
+            } else {
+                inner.classList.remove('is-flipped');
+            }
+        }
+
+        function prevFlashcard() {
+            if (appState.flashcardsDeck.length <= 1) return;
+            
+            appState.isFlashcardFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('is-flipped');
+            
+            // Animation timeout before changing text values
+            setTimeout(() => {
+                appState.currentFlashcardIndex = (appState.currentFlashcardIndex - 1 + appState.flashcardsDeck.length) % appState.flashcardsDeck.length;
+                renderActiveFlashcard();
+            }, 150);
+        }
+
+        function nextFlashcard() {
+            if (appState.flashcardsDeck.length <= 1) return;
+            
+            appState.isFlashcardFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('is-flipped');
+            
+            setTimeout(() => {
+                appState.currentFlashcardIndex = (appState.currentFlashcardIndex + 1) % appState.flashcardsDeck.length;
+                renderActiveFlashcard();
+            }, 150);
+        }
+
+        function markCurrentCardStatus(shouldMarkMastered) {
+            const currentCard = appState.flashcardsDeck[appState.currentFlashcardIndex];
+            if (!currentCard || currentCard.id === 0) return;
+
+            const isCurrentlyMastered = appState.masteredIds.includes(currentCard.id);
+
+            if (shouldMarkMastered && !isCurrentlyMastered) {
+                toggleWordMastery(currentCard.id);
+            } else if (!shouldMarkMastered && isCurrentlyMastered) {
+                toggleWordMastery(currentCard.id);
+            }
+
+            // Auto advance carousel with subtle feedback transition
+            nextFlashcard();
+        }
+
+        function renderDictionary() {
+            const grid = document.getElementById('dictionary-grid');
+            grid.innerHTML = '';
+
+            const searchQuery = document.getElementById('dict-search-input').value.toLowerCase().trim();
+            const filterPos = document.getElementById('dict-filter-pos').value;
+
+            // Map and filter Dataset
+            const filteredWords = vocabDataset.filter(wordObj => {
+                const matchesSearch = wordObj.word.toLowerCase().includes(searchQuery) || 
+                                     wordObj.forms.toLowerCase().includes(searchQuery);
+                
+                let matchesPos = true;
+                if (filterPos !== 'all') {
+                    matchesPos = wordObj.type === filterPos;
+                }
+
+                return matchesSearch && matchesPos;
+            });
+
+            if (filteredWords.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 text-slate-400">
+                        <i class="fa-solid fa-spell-check text-4xl mb-3 block"></i>
+                        No matching dictionary terms found. Try a different filter or search.
+                    </div>
+                `;
+                return;
+            }
+
+            filteredWords.forEach(wordObj => {
+                const isMastered = appState.masteredIds.includes(wordObj.id);
+                
+                const card = document.createElement('div');
+                card.className = `p-5 rounded-xl border transition-all flex flex-col justify-between ${
+                    isMastered 
+                    ? 'border-teal-200 bg-teal-50/10 hover:border-teal-300' 
+                    : 'border-slate-200 hover:border-slate-300 bg-white shadow-sm'
+                }`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <span class="bg-indigo-50 text-indigo-700 text-2xs px-2 py-0.5 rounded-md font-bold uppercase tracking-wide mr-2">
+                                    ${wordObj.pos}
+                                </span>
+                                <h4 class="text-lg font-bold text-slate-800 inline-block align-middle">${wordObj.word}</h4>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="speakWord('${wordObj.word}')" class="text-slate-400 hover:text-indigo-600 transition p-1 hover:bg-slate-100 rounded-full" title="Hear Pronunciation">
+                                    <i class="fa-solid fa-volume-high text-xs"></i>
+                                </button>
+                                <button onclick="toggleWordMastery(${wordObj.id})" class="transition p-1.5 rounded-full ${isMastered ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}" title="Toggle Mastery Status">
+                                    <i class="fa-solid fa-circle-check text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-4">${wordObj.def}</p>
+                    </div>
+                    <div class="border-t border-slate-100/80 pt-3 mt-auto">
+                        <span class="text-slate-400 font-bold text-3xs uppercase tracking-widest block mb-1">Passage Context</span>
+                        <p class="text-slate-500 text-xs italic">"${wordObj.hint}"</p>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function searchVocabularyDictionary() {
+            renderDictionary();
+        }
+
+        const quizChallenges = [
+            { id: 1, label: "① Discuss / Discussion", options: ["discuss", "discussion"], correct: "discussion", phrase: "When you discuss a problem with your partner, you can make a ______ to share ideas openly." },
+            { id: 2, label: "② Impossible / Possible", options: ["impossible", "possible"], correct: "possible", phrase: "It’s impossible for a beginner to master everything at once, but you should practice as much as ______ to make it possible." },
+            { id: 3, label: "③ Fail / Failure", options: ["fail", "failure"], correct: "failure", phrase: "Although you may fail an exam or fail to solve a hard problem many times, don’t let that give you a sense of ______—just keep trying." },
+            { id: 4, label: "④ Burn", options: ["burned", "burnt"], correct: "burnt", phrase: "If you get burned while cooking, remember that your body also burns energy when you exercise, and the past form can be burned or ______." },
+            { id: 5, label: "⑤ Separate", options: ["separately", "separate"], correct: "separately", phrase: "To make pure water, you need to separate salt from water, which means you separate the mixture into two parts, and the process can be done ______." },
+            { id: 6, label: "⑥ Succeed (Blank 1)", options: ["succeed", "success", "successful"], correct: "succeed", phrase: "If you ______ in achieving your goal, you make a great success in your field and are successful in everything you do." },
+            { id: 7, label: "⑥ Success / Successful (Blank 2)", options: ["succeed", "success", "successful"], correct: "success", phrase: "If you succeed in achieving your goal, you make a great ______ in your field and are successful in everything you do." },
+            { id: 8, label: "⑥ Success / Successful (Blank 3)", options: ["succeed", "success", "successful"], correct: "successful", phrase: "If you succeed in achieving your goal, you make a great success in your field and are ______ in everything you do." },
+            { id: 9, label: "⑦ Stick / Sticky / Sticker", options: ["stick", "sticky", "sticker"], correct: "sticker", phrase: "You can stick a ______ onto your notebook, but remember to stick to doing your homework every day, even if the glue feels sticky." },
+            { id: 10, label: "⑧ Luckily / Lucky / Luck (Blank 1)", options: ["Luckily", "lucky", "luck"], correct: "Luckily", phrase: "______, I was lucky to find my lost keys, because good luck often comes to those who stay positive, while bad luck can happen to anyone." },
+            { id: 11, label: "⑧ Luckily / Lucky / Luck (Blank 2)", options: ["Luckily", "lucky", "luck"], correct: "lucky", phrase: "Luckily, I was ______ to find my lost keys, because good luck often comes to those who stay positive, while bad luck can happen to anyone." },
+            { id: 12, label: "⑧ Luckily / Lucky / Luck (Blank 3)", options: ["Luckily", "lucky", "luck"], correct: "luck", phrase: "Luckily, I was lucky to find my lost keys, because good ______ often comes to those who stay positive, while bad luck can happen to anyone." },
+            { id: 13, label: "⑨ Excitedly / Excited", options: ["excitedly", "excited", "exciting", "excitement"], correct: "excitedly", phrase: "The children shouted ______ and were excited about the trip, because it was an exciting trip that filled everyone with excitement." },
+            { id: 14, label: "⑨ Excited / Exciting / Excitement (Blank 2)", options: ["excitedly", "excited", "exciting", "excitement"], correct: "excited", phrase: "The children shouted excitedly and were ______ about the trip, because it was an exciting trip that filled everyone with excitement." },
+            { id: 15, label: "⑨ Excited / Exciting / Excitement (Blank 3)", options: ["excitedly", "excited", "exciting", "excitement"], correct: "exciting", phrase: "The children shouted excitedly and were excited about the trip, because it was an ______ trip that filled everyone with excitement." },
+            { id: 16, label: "⑨ Excited / Exciting / Excitement (Blank 4)", options: ["excitedly", "excited", "exciting", "excitement"], correct: "excitement", phrase: "The children shouted excitedly and were excited about the trip, because it was an exciting trip that filled everyone with ______." },
+            { id: 17, label: "⑩ Hopefully / Hopeful / Hopeless (Blank 1)", options: ["Hopefully", "hopeful", "hope", "hopeless"], correct: "Hopefully", phrase: "______, we hope to win the game, and we hope for good weather, staying hopeful even in the hope of a small chance, though things may seem hopeless at times." },
+            { id: 18, label: "⑩ Hopefully / Hopeful / Hopeless (Blank 2)", options: ["Hopefully", "hopeful", "hope", "hopeless"], correct: "hopeful", phrase: "Hopefully, we hope to win the game, and we hope for good weather, staying ______ even in the hope of a small chance, though things may seem hopeless at times." },
+            { id: 19, label: "⑩ Hopefully / Hopeful / Hopeless (Blank 3)", options: ["Hopefully", "hopeful", "hope", "hopeless"], correct: "hopeless", phrase: "Hopefully, we hope to win the game, and we hope for good weather, staying hopeful even in the hope of a small chance, though things may seem ______ at times." },
+            { id: 20, label: "⑪ Countless / Countable", options: ["countable", "countless", "count"], correct: "countable", phrase: "After countless tries, you can count from 1 to 100, and you can always count on your friends and count in me for help, even though not everything is ______ like a counter shows." },
+            { id: 21, label: "① brave / bravery (Conversion 1)", options: ["brave", "bravery"], correct: "brave", phrase: "The ______ firefighter showed great bravery when he ran into the burning house to save the child." },
+            { id: 22, label: "① brave / bravery (Conversion 2)", options: ["brave", "bravery"], correct: "bravery", phrase: "The brave firefighter showed great ______ when he ran into the burning house to save the child." },
+            { id: 23, label: "② feeling / feel (Conversion 1)", options: ["feel", "feeling"], correct: "feel", phrase: "When you ______ the soft fur of a cat, the pleasant feeling can make you smile." },
+            { id: 24, label: "② feeling / feel (Conversion 2)", options: ["feel", "feeling"], correct: "feeling", phrase: "When you feel the soft fur of a cat, the pleasant ______ can make you smile." },
+            { id: 25, label: "③ curious / curiosity (Conversion 1)", options: ["curious", "curiosity"], correct: "curious", phrase: "The little girl was so ______ about the stars that her curiosity led her to read many books about space." },
+            { id: 26, label: "③ curious / curiosity (Conversion 2)", options: ["curious", "curiosity"], correct: "curiosity", phrase: "The little girl was so curious about the stars that her ______ led her to read many books about space." },
+            { id: 27, label: "④ solve / solution (Conversion 1)", options: ["solve", "solution"], correct: "solve", phrase: "After trying many ways to ______ the math problem, we finally found a simple solution that worked." },
+            { id: 28, label: "④ solve / solution (Conversion 2)", options: ["solve", "solution"], correct: "solution", phrase: "After trying many ways to solve the math problem, we finally found a simple ______ that worked." }
+        ];
+
+        function setupQuizQuestions() {
+            const container = document.getElementById('quiz-questions-stack');
+            container.innerHTML = '';
+
+            // Render select subset of challenges to keep interface highly focused and neat
+            quizChallenges.forEach((item, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = "p-4 sm:p-5 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col gap-3";
+                
+                // Formulate sentence formatting to highlight blank position dynamically
+                const displayPhrase = item.phrase.replace("______", `<span class="bg-indigo-100 text-indigo-900 border-b-2 border-indigo-500 font-bold px-2 py-0.5 rounded-sm select-none" id="blank-${index}">_____</span>`);
+
+                questionDiv.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">${item.label}</span>
+                        <span id="feedback-badge-${index}" class="text-xs font-bold px-2 py-0.5 rounded-full hidden"></span>
+                    </div>
+                    <p class="text-sm sm:text-base leading-relaxed text-slate-700 font-medium">${displayPhrase}</p>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        ${item.options.map(opt => `
+                            <button onclick="selectQuizOption(${index}, '${opt}')" id="btn-opt-${index}-${opt}" class="quiz-option-btn-${index} px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-700 transition-all shadow-sm">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+
+                container.appendChild(questionDiv);
+            });
+        }
+
+        const userQuizResponses = {};
+
+        function selectQuizOption(index, optionText) {
+            userQuizResponses[index] = optionText;
+
+            // Reset active styles on sibling choices
+            document.querySelectorAll(`.quiz-option-btn-${index}`).forEach(btn => {
+                btn.className = `quiz-option-btn-${index} px-4 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 transition shadow-sm hover:bg-slate-50`;
+            });
+
+            // Set active state styling on the selected option
+            const activeBtn = document.getElementById(`btn-opt-${index}-${optionText}`);
+            if (activeBtn) {
+                activeBtn.className = `quiz-option-btn-${index} px-4 py-1.5 bg-indigo-600 border border-indigo-600 rounded-lg text-xs font-bold text-white transition shadow-md shadow-indigo-600/10`;
+            }
+
+            // Inline update quiz phrase visual blank instantly
+            document.getElementById(`blank-${index}`).textContent = optionText;
+        }
+
+        function checkAllQuizAnswers() {
+            let correctCount = 0;
+
+            quizChallenges.forEach((item, index) => {
+                const badge = document.getElementById(`feedback-badge-${index}`);
+                const userVal = userQuizResponses[index];
+
+                badge.classList.remove('hidden');
+
+                if (userVal && userVal.toLowerCase() === item.correct.toLowerCase()) {
+                    correctCount++;
+                    badge.innerHTML = `<i class="fa-solid fa-check"></i> Correct`;
+                    badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200";
+                } else {
+                    badge.innerHTML = `<i class="fa-solid fa-xmark"></i> Incorrect (Ans: ${item.correct})`;
+                    badge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200";
+                }
+            });
+
+            // Update Global Quiz Score Indicators
+            document.getElementById('quiz-score-indicator').textContent = `${correctCount} / ${quizChallenges.length} Correct`;
+        }
+
+        function resetQuiz() {
+            // Flush state arrays
+            for (let key in userQuizResponses) delete userQuizResponses[key];
+
+            quizChallenges.forEach((item, index) => {
+                const badge = document.getElementById(`feedback-badge-${index}`);
+                badge.classList.add('hidden');
+                document.getElementById(`blank-${index}`).textContent = "_____";
+            });
+
+            // Reset scores & layout
+            document.getElementById('quiz-score-indicator').textContent = `0 / ${quizChallenges.length} Correct`;
+            setupQuizQuestions();
+        }
+    </script>
+</body>
+</html>
